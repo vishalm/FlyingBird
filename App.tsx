@@ -6,17 +6,41 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  useWindowDimensions,
   StatusBar,
   ImageBackground,
   SafeAreaView,
-  Easing,
   ScrollView,
   Platform,
   Linking,
+  Image,
+  Easing,
 } from 'react-native';
 
-const { width } = Dimensions.get('window');
-const height = Dimensions.get('window').height || 800;
+// --- ANIMAL ASSETS IMPORT ---
+import birdImg from './assets/animals/bird.png';
+import owlImg from './assets/animals/owl.png';
+import batImg from './assets/animals/bat.png';
+import beeImg from './assets/animals/bee.png';
+import penguinImg from './assets/animals/penguin.png';
+import foxImg from './assets/animals/fox.png';
+import duckImg from './assets/animals/duck.png';
+import monkeyImg from './assets/animals/monkey.png';
+import tigerImg from './assets/animals/tiger.png';
+import snakeImg from './assets/animals/snake.png';
+import elephantImg from './assets/animals/elephant.png';
+import bearImg from './assets/animals/bear.png';
+import frogImg from './assets/animals/frog.png';
+import dinosaurImg from './assets/animals/dinosaur.png';
+import octopusImg from './assets/animals/octopus.png';
+import giraffeImg from './assets/animals/giraffe.png';
+import lionImg from './assets/animals/lion.png';
+import hippoImg from './assets/animals/hippo.png';
+import slothImg from './assets/animals/sloth.png';
+import unicornImg from './assets/animals/unicorn.png';
+
+const initialWidth = Dimensions.get('window').width;
+const initialHeight = Dimensions.get('window').height || 800;
 
 const isWeb = Platform.OS === 'web';
 
@@ -66,16 +90,49 @@ const generateInitialLeaderboard = () => {
   return board;
 };
 
+// --- PLAYER ANIMALS COLLECTION ---
+const PLAYER_ANIMALS = [
+  { img: birdImg, name: 'Bird' },
+  { img: owlImg, name: 'Owl' },
+  { img: batImg, name: 'Bat' },
+  { img: beeImg, name: 'Bee' },
+  { img: penguinImg, name: 'Penguin' },
+  { img: foxImg, name: 'Fox' },
+  { img: duckImg, name: 'Duck' },
+];
 
-const GlitchedText = ({ text, style }: any) => {
+const getRandomPlayerAnimal = () => PLAYER_ANIMALS[Math.floor(Math.random() * PLAYER_ANIMALS.length)];
+
+// --- EXPANDED HD ANIMALS COLLECTION ---
+const ANIMALS = [
+  { img: monkeyImg, name: 'Monkey' },
+  { img: tigerImg, name: 'Tiger' },
+  { img: snakeImg, name: 'Snake' },
+  { img: elephantImg, name: 'Elephant' },
+  { img: bearImg, name: 'Bear' },
+  { img: frogImg, name: 'Frog' },
+  { img: dinosaurImg, name: 'Dinosaur' },
+  { img: foxImg, name: 'Fox' },
+  { img: batImg, name: 'Bat' },
+  { img: octopusImg, name: 'Octopus' },
+  { img: owlImg, name: 'Owl' },
+  { img: giraffeImg, name: 'Giraffe' },
+  { img: lionImg, name: 'Lion' },
+  { img: hippoImg, name: 'Hippo' },
+  { img: penguinImg, name: 'Penguin' },
+  { img: beeImg, name: 'Bee' },
+  { img: slothImg, name: 'Sloth' },
+  { img: birdImg, name: 'Bird' },
+  { img: duckImg, name: 'Duck' },
+  { img: unicornImg, name: 'Unicorn' }
+];
+
+const getRandomAnimal = () => ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+
+
+const HeroText = ({ text, style }: any) => {
   return (
     <View style={styles.glitchContainer}>
-      <Text style={[styles.glitchText, style, styles.glitchLayer1]}>
-        {text}
-      </Text>
-      <Text style={[styles.glitchText, style, styles.glitchLayer2]}>
-        {text}
-      </Text>
       <Text style={[styles.glitchText, style]}>{text}</Text>
     </View>
   );
@@ -141,13 +198,71 @@ const Card = ({ title, subtitle, icon, onPress, variant = 'default' }: CardProps
 };
 
 export default function App() {
+  const { width, height } = useWindowDimensions();
   const [activeScreen, setActiveScreen] = useState('menu');
+  const [isLoadingScreen, setIsLoadingScreen] = useState(false);
+  const [loadingAnimalIndex, setLoadingAnimalIndex] = useState(0);
+  const [activePlayer, setActivePlayer] = useState(() => getRandomPlayerAnimal());
+
+  // Reroll the flying player character every time we reset to the main menu!
+  useEffect(() => {
+    if (activeScreen === 'menu') {
+      setActivePlayer(getRandomPlayerAnimal());
+    }
+  }, [activeScreen]);
+
+  // AUDIO STATE
+  const [isMuted, setIsMuted] = useState(false);
+  const isMutedRef = useRef(isMuted);
+
+  const toggleMute = () => {
+    setIsMuted(!isMuted);
+    isMutedRef.current = !isMuted;
+
+    const globalWindow = globalThis as any;
+    if (!isMuted && Platform.OS === 'web' && globalWindow.window?.speechSynthesis) {
+      globalWindow.window.speechSynthesis.cancel();
+    }
+  };
+
+  // Rapid speech for animals in loading screen
+  const speakLoadingAnimal = (animalName: string) => {
+    const globalWindow = globalThis as any;
+    if (!isMutedRef.current && Platform.OS === 'web' && globalWindow.window?.speechSynthesis) {
+      globalWindow.window.speechSynthesis.cancel();
+      const Utterance = globalWindow.SpeechSynthesisUtterance;
+      if (Utterance) {
+        const utterance = new Utterance(animalName);
+        utterance.rate = 1.8; // Speak faster for loading screen!
+        utterance.pitch = 1.5; // Fun high pitch!
+        globalWindow.window.speechSynthesis.speak(utterance);
+      }
+    }
+  };
 
   // MENU ANIMATIONS
   const floatAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const slideUpAnim = useRef(new Animated.Value(100)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const chaseAnim = useRef(new Animated.Value(-150)).current;
+
+  // Chase Animation Logic
+  useEffect(() => {
+    if (isLoadingScreen) {
+      chaseAnim.setValue(-150);
+      Animated.loop(
+        Animated.timing(chaseAnim, {
+          toValue: width + 50,
+          duration: 3500,
+          easing: Easing.linear,
+          useNativeDriver: !isWeb,
+        })
+      ).start();
+    } else {
+      chaseAnim.stopAnimation();
+    }
+  }, [isLoadingScreen, width]);
 
   // LEADERBOARD STATE
   const [leaderboard] = useState(generateInitialLeaderboard());
@@ -175,9 +290,9 @@ export default function App() {
 
   // GAME STATE
   const gameState = useRef({
-    y: height / 2,
+    y: initialHeight / 2,
     velocity: 0,
-    pipes: [{ x: width, gapY: height / 2, passed: false }],
+    pipes: [{ x: initialWidth, gapY: initialHeight / 2, passed: false, animal: getRandomAnimal(), spoken: true }],
     score: 0,
     isGameOver: false,
     isPlaying: false,
@@ -248,7 +363,7 @@ export default function App() {
       lastTime = now;
 
       const state = gameState.current;
-      if (activeScreen === 'game' && state.isPlaying && !state.isGameOver) {
+      if (activeScreen === 'game' && !isLoadingScreen && state.isPlaying && !state.isGameOver) {
 
         // Autopilot Bot Logic (UI Test Case) - Advanced Lookahead
         if (state.isAutopilot) {
@@ -278,13 +393,30 @@ export default function App() {
           state.isGameOver = true;
         }
 
-        // Complexity increases every 10 points
-        const speedMultiplier = 1 + (Math.floor(state.score / 10) * 0.15); // Pipes get faster
-        const gapSize = Math.max(80, 100 - (Math.floor(state.score / 10) * 5)); // Gap decreases
+        // Complexity increases slowly for kids (game gets faster slower)
+        const speedMultiplier = 0.7 + (Math.floor(state.score / 15) * 0.05); // Pipes are slower initially
+        const gapSize = Math.max(130, 180 - (Math.floor(state.score / 10) * 5)); // Huge easy gaps!
 
         // Pipe updating & hit detection
         for (let p of state.pipes) {
           p.x -= (4 * speedMultiplier) * dt;
+
+          // Speak animal name when entering screen
+          if (!p.spoken && p.x < width) {
+            p.spoken = true;
+            const globalWindow = globalThis as any;
+            if (!isMutedRef.current && Platform.OS === 'web' && globalWindow.window?.speechSynthesis) {
+              globalWindow.window.speechSynthesis.cancel();
+
+              const Utterance = globalWindow.SpeechSynthesisUtterance;
+              if (Utterance) {
+                const utterance = new Utterance(p.animal.name);
+                utterance.rate = 1.0;
+                utterance.pitch = 1.2;
+                globalWindow.window.speechSynthesis.speak(utterance);
+              }
+            }
+          }
 
           const birdLeft = width * 0.25;
           const birdRight = birdLeft + 40;
@@ -294,10 +426,10 @@ export default function App() {
           const pipeLeft = p.x;
           const pipeRight = p.x + 70; // pipe width
 
-          // Collision logic
-          if (birdRight > pipeLeft && birdLeft < pipeRight) {
+          // Forgiving hitboxes for kids! 10px margin of error
+          if (birdRight - 10 > pipeLeft && birdLeft + 10 < pipeRight) {
             // Use dynamically shrinking gap
-            if (birdTop < p.gapY - gapSize || birdBottom > p.gapY + gapSize) {
+            if (birdTop + 10 < p.gapY - gapSize || birdBottom - 10 > p.gapY + gapSize) {
               state.isGameOver = true;
             }
           }
@@ -311,12 +443,17 @@ export default function App() {
           }
         }
 
-        // Spawning new pipes
-        if (state.pipes[state.pipes.length - 1].x < width - (280 / speedMultiplier)) {
+        // Spawning new pipes (safely away from edges)
+        if (state.pipes[state.pipes.length - 1].x < width - (320 / speedMultiplier)) {
+          const safeMargin = gapSize + 40;
+          const minGapY = safeMargin;
+          const maxGapY = Math.max(safeMargin + 10, height - safeMargin);
           state.pipes.push({
             x: width,
-            gapY: 200 + Math.random() * (height - 400),
-            passed: false
+            gapY: minGapY + Math.random() * (maxGapY - minGapY),
+            passed: false,
+            animal: getRandomAnimal(),
+            spoken: false
           });
         }
 
@@ -326,7 +463,7 @@ export default function App() {
         }
       }
 
-      if (activeScreen === 'game') {
+      if (activeScreen === 'game' && !isLoadingScreen) {
         // Force re-render to visually sync with JS game engine state
         setFrame(f => f + 1);
       }
@@ -336,7 +473,29 @@ export default function App() {
 
     animationFrameId = requestAnimationFrame(gameLoop);
     return () => cancelAnimationFrame(animationFrameId);
-  }, [activeScreen]);
+  }, [activeScreen, isLoadingScreen, width, height]);
+
+  // Handle Keyboard Spacebar for Flying/Flapping
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+
+    const globalWindow = globalThis as any;
+
+    const handleKeyDown = (e: any) => {
+      // Spacebar or ArrowUp to flap
+      if (e.code === 'Space' || e.code === 'ArrowUp') {
+        if (activeScreen === 'game' && !isLoadingScreen) {
+          e.preventDefault(); // prevent scrolling if focused elsewhere
+          handleFlap();
+        }
+      }
+    };
+
+    if (globalWindow.window) {
+      globalWindow.window.addEventListener('keydown', handleKeyDown);
+      return () => globalWindow.window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [activeScreen, isLoadingScreen]);
 
   const handleFlap = () => {
     const state = gameState.current;
@@ -346,7 +505,7 @@ export default function App() {
       // Reset Game
       state.y = height / 2;
       state.velocity = -10;
-      state.pipes = [{ x: width, gapY: height / 2, passed: false }];
+      state.pipes = [{ x: width, gapY: height / 2, passed: false, animal: getRandomAnimal(), spoken: true }];
       state.score = 0;
       state.isGameOver = false;
       state.isPlaying = true;
@@ -396,11 +555,11 @@ export default function App() {
       ]}
     >
       <Animated.View style={{ transform: [{ translateY: floatAnim }] }}>
-        <GlitchedText text="FLYING" style={styles.titleTextTop} />
-        <GlitchedText text="PRO" style={styles.titleTextBottom} />
+        <HeroText text="FLYING" style={styles.titleTextTop} />
+        <HeroText text={activePlayer.name.toUpperCase()} style={styles.titleTextBottom} />
       </Animated.View>
 
-      <Text style={styles.seasonText}>COMPETITION ENDS IN: 38H 12M 04S</Text>
+      <Text style={styles.seasonText}>KIDS FUN MODE: EASY PHYSICS & HUGE GAPS!</Text>
 
       <View style={styles.mainActions}>
         <TouchableOpacity
@@ -412,8 +571,28 @@ export default function App() {
             gameState.current.isGameOver = false;
             gameState.current.isPlaying = false;
             gameState.current.isAutopilot = false;
-            gameState.current.pipes = [{ x: width, gapY: height / 2, passed: false }];
-            setActiveScreen('game')
+            gameState.current.pipes = [{ x: width, gapY: height / 2, passed: false, animal: getRandomAnimal(), spoken: true }];
+
+            // LAUNCH THE FUN LOADING SCREEN!
+            setIsLoadingScreen(true);
+            setActiveScreen('game');
+            setLoadingAnimalIndex(0);
+
+            // 3-second rapid loading drill!
+            let flashes = 0;
+            const loadingInterval = setInterval(() => {
+              flashes++;
+              const nextIdx = flashes % ANIMALS.length;
+              setLoadingAnimalIndex(nextIdx);
+              speakLoadingAnimal(ANIMALS[nextIdx].name);
+
+              if (flashes >= 8) {
+                clearInterval(loadingInterval);
+                setIsLoadingScreen(false);
+                // Actually start the game physics!
+                gameState.current.isPlaying = true;
+              }
+            }, 500); // changes animal every 500ms
           }}
         >
           <Animated.View
@@ -421,7 +600,7 @@ export default function App() {
           >
             <View style={styles.playButtonInner}>
               <Text style={styles.playButtonText}>TAP TO FLY</Text>
-              <Text style={styles.playButtonSubInfo}>Free To Play ✦ Improve Rank</Text>
+              <Text style={styles.playButtonSubInfo}>Fun & Easy • Perfect For Kids!</Text>
             </View>
           </Animated.View>
         </TouchableOpacity>
@@ -435,9 +614,27 @@ export default function App() {
             gameState.current.score = 0;
             gameState.current.isGameOver = false;
             gameState.current.isAutopilot = true;
-            gameState.current.isPlaying = true;
-            gameState.current.pipes = [{ x: width, gapY: height / 2, passed: false }];
+            gameState.current.isPlaying = false; // pause physics during load
+            gameState.current.pipes = [{ x: width, gapY: height / 2, passed: false, animal: getRandomAnimal(), spoken: true }];
+
+            // LAUNCH THE FUN LOADING SCREEN FOR BOT TOO!
+            setIsLoadingScreen(true);
             setActiveScreen('game');
+            setLoadingAnimalIndex(0);
+
+            let flashes = 0;
+            const loadingInterval = setInterval(() => {
+              flashes++;
+              const nextIdx = flashes % ANIMALS.length;
+              setLoadingAnimalIndex(nextIdx);
+              speakLoadingAnimal(ANIMALS[nextIdx].name);
+
+              if (flashes >= 6) {
+                clearInterval(loadingInterval);
+                setIsLoadingScreen(false);
+                gameState.current.isPlaying = true; // launch bot!
+              }
+            }, 800);
           }}
         >
           <Text style={styles.botModeText}>🤖 RUN UI TEST (AUTOPILOT)</Text>
@@ -543,8 +740,37 @@ export default function App() {
   const renderGame = () => {
     const state = gameState.current;
 
+    // Loading Screen Override
+    if (isLoadingScreen) {
+      const activeAnimal = ANIMALS[loadingAnimalIndex];
+      return (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingTitle}>GET READY!</Text>
+
+          {/* CHASE SCENE HD ANIMATION */}
+          <View style={styles.chaseSceneContainer}>
+            <Animated.View style={[styles.chaserWrapper, { transform: [{ translateX: chaseAnim }] }]}>
+              {/* Animal Chasing */}
+              <Image source={activeAnimal.img} style={styles.chasingAnimalImg} resizeMode="contain" />
+              {/* Bird Running */}
+              <Image source={activePlayer.img} style={styles.fleeingBirdImg} resizeMode="contain" />
+            </Animated.View>
+          </View>
+
+          <View style={styles.loadingAnimalBox}>
+            <Image source={activeAnimal.img} style={styles.loadingAnimalTargetImg} resizeMode="contain" />
+          </View>
+          <Text style={styles.loadingAnimalTargetName}>{activeAnimal.name}</Text>
+
+          <TouchableOpacity style={[styles.muteButton, { marginTop: 40 }]} onPress={toggleMute}>
+            <Text style={styles.muteButtonText}>{isMuted ? '🔇 Muted' : '🔊 Sound On'}</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
     // Dynamically Shrinking Gap logic for UI rendering to match physics
-    const gapSize = Math.max(80, 100 - (Math.floor(state.score / 10) * 5));
+    const gapSize = Math.max(130, 180 - (Math.floor(state.score / 10) * 5));
 
     return (
       <TouchableOpacity
@@ -552,28 +778,49 @@ export default function App() {
         style={styles.gameContainer}
         onPress={handleFlap}
       >
-        {/* PIPES Rendering */}
-        {state.pipes.map((pipe, i) => (
-          <React.Fragment key={i}>
-            {/* Top Pipe */}
-            <View style={[styles.pipeOuter, styles.pipeTop, { left: pipe.x, height: Math.max(0, pipe.gapY - gapSize) }]}>
-              <View style={styles.pipeInner} />
-            </View>
-            {/* Bottom Pipe */}
-            <View style={[styles.pipeOuter, { left: pipe.x, top: pipe.gapY + gapSize, height: Math.max(0, height - (pipe.gapY + gapSize)) }]}>
-              <View style={styles.pipeInner} />
-            </View>
-          </React.Fragment>
-        ))}
+        {/* PIPES (ANIMALS) Rendering */}
+        {state.pipes.map((pipe, i) => {
+          const topGap = Math.max(0, pipe.gapY - gapSize);
+          const bottomGap = Math.max(0, height - (pipe.gapY + gapSize));
+
+          return (
+            <React.Fragment key={i}>
+              {/* Top Animal Container */}
+              <View style={[styles.pipeOuter, styles.pipeTop, { left: pipe.x, height: topGap }]}>
+                {topGap > 60 && (
+                  <View style={styles.animalPillarContainer}>
+                    <Image source={pipe.animal.img} style={styles.animalImgHero} resizeMode="contain" />
+                    <Text style={styles.animalPillarName}>{pipe.animal.name}</Text>
+                  </View>
+                )}
+              </View>
+              {/* Bottom Animal Container */}
+              <View style={[styles.pipeOuter, styles.pipeBottom, { left: pipe.x, top: pipe.gapY + gapSize, height: bottomGap }]}>
+                {bottomGap > 60 && (
+                  <View style={styles.animalPillarContainer}>
+                    <Image source={pipe.animal.img} style={styles.animalImgHero} resizeMode="contain" />
+                    <Text style={styles.animalPillarName}>{pipe.animal.name}</Text>
+                  </View>
+                )}
+              </View>
+            </React.Fragment>
+          );
+        })}
 
         {/* HUD Overlay */}
         <View style={styles.gameHud}>
-          <Text style={styles.stageText}>STAGE {Math.floor(state.score / 10) + 1}</Text>
+          <View style={styles.topGameHudRow}>
+            <Text style={styles.stageText}>STAGE {Math.floor(state.score / 10) + 1}</Text>
+
+            <TouchableOpacity style={styles.muteButton} onPress={toggleMute}>
+              <Text style={styles.muteButtonText}>{isMuted ? '🔇 Muted' : '🔊 Sound On'}</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.scoreText}>{state.score}</Text>
           {state.isGameOver && (
             <View style={styles.gameOverBox}>
-              <Text style={styles.gameOverText}>CRASHED!</Text>
-              <Text style={styles.tapToRestart}>Tap Anywhere to Restart</Text>
+              <Text style={styles.gameOverText}>OOPS!</Text>
+              <Text style={styles.tapToRestart}>Tap Anywhere to Try Again</Text>
             </View>
           )}
           {!state.isPlaying && !state.isGameOver && !state.isAutopilot && (
@@ -584,18 +831,11 @@ export default function App() {
           )}
         </View>
 
-        {/* THE IMAGINARY BIRD */}
-        {/* We use Native styles here to render a glowing cosmic orb bird */}
-        <View style={[styles.birdWrapper, { top: state.y }]}>
-          <View style={styles.imaginaryBirdBody}>
-            {/* Pulsing Core */}
-            <View style={styles.birdCore} />
-            {/* Neon Cyber Wing */}
-            <View style={styles.birdWing} />
-            {/* Laser Eye */}
-            <View style={styles.birdEye} />
-          </View>
-        </View>
+        {/* THE HD REALISTIC BIRD WITH ANIMATION */}
+        {/* We dynamically compute the rotation so when jumping it looks up, when falling it aims down */}
+        <Animated.View style={[styles.birdWrapper, { top: state.y, left: width * 0.25, transform: [{ rotate: `${Math.max(-25, Math.min(25, state.velocity * 3))}deg` }] }]}>
+          <Image source={activePlayer.img} style={styles.birdImgHero} resizeMode="contain" />
+        </Animated.View>
 
         <TouchableOpacity
           style={styles.gameOverlayBtn}
@@ -644,7 +884,7 @@ const styles = StyleSheet.create({
   bgImage: { flex: 1, width: '100%', height: '100%' },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(5, 5, 20, 0.65)',
+    backgroundColor: 'rgba(5, 5, 20, 0.35)', // Less opacity for kids bright mode
   },
   safeArea: { flex: 1 },
 
@@ -790,7 +1030,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   card: {
-    width: (width - 80) / 2, // slightly adjusted width
+    flex: 1,
+    minWidth: 140,
+    maxWidth: 200,
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 20,
     padding: 15,
@@ -815,12 +1057,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 10
   },
+  topGameHudRow: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+    paddingHorizontal: 30,
+    alignItems: 'center'
+  },
   stageText: {
     fontSize: 24,
     fontWeight: '900',
     color: '#0FF',
     letterSpacing: 4,
     ...textShadow('#F0F', 5)
+  },
+  muteButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)'
+  },
+  muteButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: 'bold'
   },
   scoreText: {
     fontSize: 80,
@@ -841,64 +1103,120 @@ const styles = StyleSheet.create({
   tapToRestart: { color: '#0FF', fontSize: 18, fontWeight: '700', marginTop: 10 },
   autopilotHighlight: { color: '#F0F' },
 
-  // Game Pipes (Neon Style)
+  // Game Animal Obstacles
   pipeOuter: {
     position: 'absolute',
-    width: 70,
-    backgroundColor: 'rgba(0, 255, 150, 0.1)',
-    borderWidth: 2,
-    borderColor: '#00FF96',
-    borderRadius: 10,
+    width: 100,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
     overflow: 'hidden',
   },
-  pipeTop: { top: 0 },
-  pipeInner: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 255, 150, 0.3)',
-    ...boxShadow('#00FF96', 20)
+  pipeTop: {
+    top: 0,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingBottom: 10
+  },
+  pipeBottom: {
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingTop: 10
+  },
+  animalPillarContainer: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    padding: 10,
+    borderRadius: 20,
+    width: 90
+  },
+  animalImgHero: {
+    width: 60,
+    height: 60,
+  },
+  animalPillarName: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '900',
+    marginTop: 5,
+    textTransform: 'uppercase',
+    ...textShadow('#000', 5)
   },
 
-  // "Imaginary Bird" Mechanics
-  birdWrapper: {
-    position: 'absolute',
-    left: width * 0.25
-  },
-  imaginaryBirdBody: {
-    width: 40,
-    height: 40,
+  // FUN LOADING SCREEN STYLES
+  loadingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 255, 255, 0.4)',
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#0FF',
+    backgroundColor: 'rgba(0, 5, 20, 0.85)',
+  },
+  loadingTitle: {
+    fontSize: 32,
+    fontWeight: '900',
+    color: '#0FF',
+    marginBottom: 40,
+    letterSpacing: 3,
+    ...textShadow('#F0F', 8)
+  },
+  chaseSceneContainer: {
+    width: '100%',
+    height: 100,
+    overflow: 'hidden',
+    marginBottom: 40,
+    position: 'relative',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 50,
+  },
+  chaserWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 200,
+    gap: 100,
+    position: 'absolute',
+    height: '100%',
+  },
+  chasingAnimalImg: {
+    width: 70,
+    height: 70,
+  },
+  fleeingBirdImg: {
+    width: 60,
+    height: 60,
+    transform: [{ scaleX: -1 }] // Bird looks to the right!
+  },
+  loadingAnimalBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    borderWidth: 4,
+    borderColor: '#FF0055',
+    ...boxShadow('#FF0055', 20),
+    marginBottom: 20,
+  },
+  loadingAnimalTargetImg: {
+    width: 120,
+    height: 120,
+  },
+  loadingAnimalTargetName: {
+    color: '#FFF',
+    fontSize: 24,
+    fontWeight: '900',
+    marginTop: 10,
+    letterSpacing: 2,
+    textTransform: 'uppercase'
+  },
+
+  // "HD Bird" Mechanics
+  birdWrapper: {
+    position: 'absolute',
+  },
+  birdImgHero: {
+    width: 60,
+    height: 60,
     ...boxShadow('#0FF', 15)
-  },
-  birdCore: {
-    width: 16,
-    height: 16,
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    ...boxShadow('#FFF', 10)
-  },
-  birdEye: {
-    position: 'absolute',
-    right: 8,
-    top: 10,
-    width: 6,
-    height: 6,
-    backgroundColor: '#FF0055',
-    borderRadius: 3,
-  },
-  birdWing: {
-    position: 'absolute',
-    left: -10,
-    width: 24,
-    height: 12,
-    backgroundColor: 'rgba(255, 0, 255, 0.6)',
-    borderTopLeftRadius: 12,
-    borderBottomLeftRadius: 12,
-    transform: [{ rotate: '-15deg' }],
   },
 
   gameOverlayBtn: { position: 'absolute', top: 50, left: 20, zIndex: 100 },

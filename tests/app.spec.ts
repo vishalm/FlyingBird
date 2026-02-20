@@ -7,10 +7,10 @@ test.describe('FlyingBird End-to-End Game Simulator', () => {
 
         // Validate the core neon title headers render (use first due to 3-layer glitch shadow)
         await expect(page.getByText('FLYING').first()).toBeVisible();
-        await expect(page.getByText('PRO').first()).toBeVisible();
+        await expect(page.getByText(/BIRD|OWL|BAT|BEE|PENGUIN|FOX|DUCK/).first()).toBeVisible();
 
         // Validate competition timer renders
-        await expect(page.getByText('COMPETITION ENDS IN')).toBeVisible();
+        await expect(page.getByText('KIDS FUN MODE: EASY PHYSICS & HUGE GAPS!')).toBeVisible();
 
         // Ensure the PLAY button is interactive
         const tapToFlyBtn = page.getByText('TAP TO FLY').first();
@@ -47,8 +47,11 @@ test.describe('FlyingBird End-to-End Game Simulator', () => {
         const botButton = page.getByText('RUN UI TEST (AUTOPILOT)', { exact: false });
         await botButton.click();
 
-        // Check we entered the game space with Autopilot engaged
-        await expect(page.getByText('Autopilot Engaged')).toBeVisible();
+        // Await the new Loading Sequence Completion
+        await expect(page.getByText('GET READY!')).toBeVisible();
+
+        // Wait for Warmup to clear and game physics to actually mount
+        await expect(page.getByText('Autopilot Engaged')).toBeVisible({ timeout: 15000 });
 
         // Await Stage progression (starts at Stage 1). The physics engine runs at ~60fps
         // We expect the bot to smoothly pass enough pipes to hit a new visual Stage identifier
