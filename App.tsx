@@ -751,9 +751,9 @@ export default function App() {
           <View style={styles.chaseSceneContainer}>
             <Animated.View style={[styles.chaserWrapper, { transform: [{ translateX: chaseAnim }] }]}>
               {/* Animal Chasing */}
-              <Image source={activeAnimal.img} style={styles.chasingAnimalImg} resizeMode="contain" />
+              <Image source={activeAnimal.img} style={[styles.chasingAnimalImg, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
               {/* Bird Running */}
-              <Image source={activePlayer.img} style={styles.fleeingBirdImg} resizeMode="contain" />
+              <Image source={activePlayer.img} style={[styles.fleeingBirdImg, { transform: [{ scaleX: -1 }] }]} resizeMode="contain" />
             </Animated.View>
           </View>
 
@@ -833,7 +833,7 @@ export default function App() {
 
         {/* THE HD REALISTIC BIRD WITH ANIMATION */}
         {/* We dynamically compute the rotation so when jumping it looks up, when falling it aims down */}
-        <Animated.View style={[styles.birdWrapper, { top: state.y, left: width * 0.25, transform: [{ rotate: `${Math.max(-25, Math.min(25, state.velocity * 3))}deg` }] }]}>
+        <Animated.View style={[styles.birdWrapper, { top: state.y, left: width * 0.25, transform: [{ scaleX: -1 }, { rotate: `${Math.max(-25, Math.min(25, state.velocity * 3))}deg` }] }]}>
           <Image source={activePlayer.img} style={styles.birdImgHero} resizeMode="contain" />
         </Animated.View>
 
