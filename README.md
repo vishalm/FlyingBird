@@ -1,33 +1,43 @@
 # 🐦 FlyingBird Pro
 
-A beautifully designed, cross-platform adaptation of the classic Flappy mechanics, powered by React Native and Vite. Experience seamless playability with a built-in predictive Autopilot Bot, dynamic rendering environments, and competitive mock leaderboards.
+<div align="center">
+  <video src="./demo/demo_draft1.mov" controls="controls" width="400"></video>
+  <br />
+  <em>(Wait for the video to load, or check out the cool GIF below!)</em>
+  <br />
+  <img src="./demo/demo.gif" alt="Game Action!" width="400" />
+</div>
 
-## 🔥 Key Features
+Welcome to **FlyingBird Pro**, the coolest flying adventure made by kids, for kids! Help your favorite animals fly through the sky and dodge the tricky obstacles. 
 
-- **Flawless Cross-Platform Mechanics:** Runs on iOS, Android, and perfectly transitions to the Web with `react-native-web` and `vite`.
-- **Intelligent Autopilot (UI Test Bot):** Engage the AI via the main menu to watch the game practically play itself. The Autopilot calculates trajectory, anticipates gravity 3 frames in the future, and executes precise micro-flaps to clear tight gaps.
-- **Dynamic Procedural Environments:** Backgrounds adapt dynamically across various stages every 10 points.
-- **Earth Cycle Leaderboards:** Competitive "Live" mock scoring metrics and global ranking interfaces.
+Now all your animal friends are packed right into the game! That means no waiting for pictures to load, and you don't even need the internet to see them! 
+
+## 🔥 Super Fun Features
+
+- **Play Anywhere!** You can play on a computer (Web), or on a tablet or phone (iOS and Android). The fun never stops!
+- **Robot Autopilot! 🤖** Do you want to see a robot play? Turn on the Autopilot Robot from the main menu and watch it do perfect jumps! It can see into the future to clear the hardest gaps!
+- **Cool Worlds! 🌍** The world changes color and style every time you score 10 points!
+- **Animal Friends! 🐅🐓** We just added lots of awesome new animal pictures that load super fast, so the game is quicker and more reliable than ever! 
+- **Leaderboards! 🥇** Compete to see who the best high-scorer is!
 
 ---
 
-## 🚀 Getting Started
+## 🚀 How to Play (Ask a Grown-up if you need help starting!)
 
-Ensure you have your base Node configuration set up.
-
-### Install Dependencies
+### 1. Get the Game Ready
+Open your terminal and type:
 ```bash
 npm install
 ```
 
-### 🌍 Run Web (Recommended)
-This boots the highly responsive Vite environment running the game natively in the browser on port `:5173`.
+### 2. 🌍 Play on the Computer (Easiest!)
+This opens the game right in your web browser!
 ```bash
 npm run web
 ```
 
-### 📱 Run Mobile iOS & Android
-Launch via standard React Native metro bundler:
+### 3. 📱 Play on a Phone or Tablet
+Use these commands to play on mobile devices:
 ```bash
 npm run ios
 # or
@@ -36,30 +46,25 @@ npm run android
 
 ---
 
-## 🧪 Testing Infrastructure
+## 🧪 Testing Magic
 
-The game ships with a comprehensive testing suite simulating unit mounts and End-to-End game flows via Playwright.
+Do you want to see the computer check the game for bugs all by itself? 
 
-### Unit Tests
-Execute the Jest snapshot and component verification tests:
+**Fast Checks (Unit Tests):**
 ```bash
 npm run test
 ```
 
-### End-to-End E2E Visual Tests
-The robust visual Playwright suite mounts the engine, clears animations, accesses the Global Leaderboards, and even fully executes an autonomous run of the Autopilot Bot!
-
-*To run E2E Tests, make sure your Web Server (`npm run web`) is active in a separate terminal OR rely on the auto-startup hook:*
+**Robot Playwright Check (End-to-End Tests):**
+Watch the computer play the game on its own to make sure it's working! Have the web server running, then type:
 ```bash
-# Headless run
 npm run test:e2e
-
-# Interactive UI test runner
+# or to watch the magic happen:
 npm run test:e2e:ui
 ```
 
 ---
 
-## ☕ Support the Developer!
-If you enjoy the project or love watching the Autopilot AI master the skies, consider sending a Ko-Fi over at:
-[Ko-Fi Sponsor: FlyingBirdAlways](https://ko-fi.com/flyingbirdalways)
+## ☕ Support the Awesome Developers!
+If you love flying with us or enjoy watching the robot do crazy tricks, you can support us here:
+[Support FlyingBird!](https://ko-fi.com/flyingbirdalways)
