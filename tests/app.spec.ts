@@ -10,10 +10,10 @@ test.describe('FlyingBird End-to-End Game Simulator', () => {
         await expect(page.getByText(/BIRD|OWL|BAT|BEE|PENGUIN|FOX|DUCK/).first()).toBeVisible();
 
         // Validate competition timer renders
-        await expect(page.getByText('KIDS FUN MODE: EASY PHYSICS & HUGE GAPS!')).toBeVisible();
+        await expect(page.getByText('SUPER KIDS FUN MODE: SLOW & EASY TO PLAY! 🎈')).toBeVisible();
 
         // Ensure the PLAY button is interactive
-        const tapToFlyBtn = page.getByText('TAP TO FLY').first();
+        const tapToFlyBtn = page.getByText('TURTLE POWER').first();
         await expect(tapToFlyBtn).toBeVisible();
     });
 
@@ -34,7 +34,7 @@ test.describe('FlyingBird End-to-End Game Simulator', () => {
 
         // Close Modal
         await page.getByText('✕').click();
-        await expect(page.getByText('TAP TO FLY').first()).toBeVisible();
+        await expect(page.getByText('TURTLE POWER').first()).toBeVisible();
     });
 
     test('should engage Autopilot Bot and accrue synthetic points', async ({ page }) => {
@@ -48,7 +48,7 @@ test.describe('FlyingBird End-to-End Game Simulator', () => {
         await botButton.click();
 
         // Await the new Loading Sequence Completion
-        await expect(page.getByText('GET READY!')).toBeVisible();
+        await expect(page.getByText('LOADING ALL ANIMALS...')).toBeVisible();
 
         // Wait for Warmup to clear and game physics to actually mount
         await expect(page.getByText('Autopilot Engaged')).toBeVisible({ timeout: 15000 });
@@ -65,7 +65,7 @@ test.describe('FlyingBird End-to-End Game Simulator', () => {
         await quitBtn.click();
 
         // After quitting, we should return to the main menu with a score > 0 added to the live rank total
-        await expect(page.getByText('TAP TO FLY').first()).toBeVisible();
+        await expect(page.getByText('TURTLE POWER').first()).toBeVisible();
     });
 
 });

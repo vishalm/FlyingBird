@@ -58,12 +58,12 @@ const boxShadow = (color: string, radius: number, x = 0, y = 0) =>
 
 // Different landscapes for every 10 points
 const LANDSCAPES = [
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop', // 0-9: Neon City
-  'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=2564&auto=format&fit=crop', // 10-19: Forest
-  'https://images.unsplash.com/photo-1610427958532-628d052a5ec2?q=80&w=2564&auto=format&fit=crop', // 20-29: Volcano
-  'https://images.unsplash.com/photo-1551244072-5d12893278ab?q=80&w=2564&auto=format&fit=crop', // 30-39: Deep Ocean
-  'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2564&auto=format&fit=crop', // 40-49: Digital Grid
-  'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2564&auto=format&fit=crop', // 50+: Void
+  'https://images.unsplash.com/photo-1507608616759-54f48f0af0ee?q=80&w=2564&auto=format&fit=crop', // Sunny sky/clouds
+  'https://images.unsplash.com/photo-1500382017468-9049fed747ef?q=80&w=2564&auto=format&fit=crop', // Green field
+  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2564&auto=format&fit=crop', // Mountains
+  'https://images.unsplash.com/photo-1518173946687-a4c8892bbd9f?q=80&w=2564&auto=format&fit=crop', // Nature/trees
+  'https://images.unsplash.com/photo-1506015391300-4b2efebdff81?q=80&w=2564&auto=format&fit=crop', // Beach
+  'https://images.unsplash.com/photo-1436891620584-47fd0e565afb?q=80&w=2564&auto=format&fit=crop', // Hot air balloons
 ];
 
 const getBackgroundUrl = (score: number) => {
@@ -128,6 +128,30 @@ const ANIMALS = [
 ];
 
 const getRandomAnimal = () => ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+
+type GameMode = 'turtle' | 'bunny' | 'cheetah';
+
+const getModeSettings = (mode: GameMode) => {
+  if (mode === 'turtle') {
+    return {
+      gravity: 0.2, jump: -6, speedBase: 0.35, gapBase: 250,
+      name: 'TURTLE POWER', subtitle: 'Super Slow & Friendly! 🐢',
+      bgColor: 'rgba(0, 200, 100, 0.8)', borderColor: '#00FF66', innerBgColor: 'rgba(0, 200, 100, 0.9)'
+    };
+  }
+  if (mode === 'bunny') {
+    return {
+      gravity: 0.45, jump: -8, speedBase: 0.5, gapBase: 200,
+      name: 'BUNNY HOP', subtitle: 'Medium Speed Fun! 🐰',
+      bgColor: 'rgba(0, 150, 255, 0.8)', borderColor: '#00D4FF', innerBgColor: 'rgba(0, 150, 255, 0.9)'
+    };
+  }
+  return {
+    gravity: 0.7, jump: -10, speedBase: 0.7, gapBase: 150,
+    name: 'CHEETAH DASH', subtitle: 'Fast & Furious! 🐆',
+    bgColor: 'rgba(255, 0, 100, 0.8)', borderColor: '#FF0055', innerBgColor: 'rgba(255, 0, 100, 0.9)'
+  };
+};
 
 
 const HeroText = ({ text, style }: any) => {
@@ -297,6 +321,7 @@ export default function App() {
     isGameOver: false,
     isPlaying: false,
     isAutopilot: false, // UI Test Bot mode!
+    gameMode: 'turtle' as GameMode,
   });
   const [, setFrame] = useState(0);
 
@@ -365,6 +390,8 @@ export default function App() {
       const state = gameState.current;
       if (activeScreen === 'game' && !isLoadingScreen && state.isPlaying && !state.isGameOver) {
 
+        const config = getModeSettings(state.gameMode);
+
         // Autopilot Bot Logic (UI Test Case) - Advanced Lookahead
         if (state.isAutopilot) {
           const birdLeft = width * 0.25;
@@ -375,17 +402,17 @@ export default function App() {
             // Project the Bird's Y coordinate 3 frames into the future
             const lookAheadDrop = state.velocity * 3;
 
-            if (state.y + lookAheadDrop > targetY && state.velocity > -4) {
-              state.velocity = -10.5; // Precision micro-flap
+            if (state.y + lookAheadDrop > targetY && state.velocity > config.jump / 3) {
+              state.velocity = config.jump; // Precision micro-flap
             }
           } else if (state.y > height / 2 + 50 && state.velocity > 0) {
             // Hover safely before pipes arrive
-            state.velocity = -10.5;
+            state.velocity = config.jump;
           }
         }
 
         // Physics
-        state.velocity += 0.8 * dt; // gravity
+        state.velocity += config.gravity * dt; // gravity changes by mode
         state.y += state.velocity * dt;
 
         // Ground & Ceiling hit detection
@@ -394,8 +421,8 @@ export default function App() {
         }
 
         // Complexity increases slowly for kids (game gets faster slower)
-        const speedMultiplier = 0.7 + (Math.floor(state.score / 15) * 0.05); // Pipes are slower initially
-        const gapSize = Math.max(130, 180 - (Math.floor(state.score / 10) * 5)); // Huge easy gaps!
+        const speedMultiplier = config.speedBase + (Math.floor(state.score / 15) * 0.02); // Pipe speed changes by mode
+        const gapSize = Math.max(150, config.gapBase - (Math.floor(state.score / 10) * 5)); // Gaps change by mode
 
         // Pipe updating & hit detection
         for (let p of state.pipes) {
@@ -426,10 +453,10 @@ export default function App() {
           const pipeLeft = p.x;
           const pipeRight = p.x + 70; // pipe width
 
-          // Forgiving hitboxes for kids! 10px margin of error
-          if (birdRight - 10 > pipeLeft && birdLeft + 10 < pipeRight) {
+          // Forgiving hitboxes for kids! 20px margin of error
+          if (birdRight - 20 > pipeLeft && birdLeft + 20 < pipeRight) {
             // Use dynamically shrinking gap
-            if (birdTop + 10 < p.gapY - gapSize || birdBottom - 10 > p.gapY + gapSize) {
+            if (birdTop + 20 < p.gapY - gapSize || birdBottom - 20 > p.gapY + gapSize) {
               state.isGameOver = true;
             }
           }
@@ -500,18 +527,19 @@ export default function App() {
   const handleFlap = () => {
     const state = gameState.current;
     if (state.isAutopilot) return; // Prevent manual flap stealing control from autopilot
+    const config = getModeSettings(state.gameMode);
 
     if (state.isGameOver) {
       // Reset Game
       state.y = height / 2;
-      state.velocity = -10;
+      state.velocity = config.jump * 0.8;
       state.pipes = [{ x: width, gapY: height / 2, passed: false, animal: getRandomAnimal(), spoken: true }];
       state.score = 0;
       state.isGameOver = false;
       state.isPlaying = true;
     } else {
       state.isPlaying = true;
-      state.velocity = -12;
+      state.velocity = config.jump; // Dynamic jump
     }
   };
 
@@ -559,56 +587,71 @@ export default function App() {
         <HeroText text={activePlayer.name.toUpperCase()} style={styles.titleTextBottom} />
       </Animated.View>
 
-      <Text style={styles.seasonText}>KIDS FUN MODE: EASY PHYSICS & HUGE GAPS!</Text>
+      <Text style={styles.seasonText}>SUPER KIDS FUN MODE: SLOW & EASY TO PLAY! 🎈</Text>
 
       <View style={styles.mainActions}>
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => {
-            gameState.current.y = height / 2;
-            gameState.current.velocity = 0;
-            gameState.current.score = 0;
-            gameState.current.isGameOver = false;
-            gameState.current.isPlaying = false;
-            gameState.current.isAutopilot = false;
-            gameState.current.pipes = [{ x: width, gapY: height / 2, passed: false, animal: getRandomAnimal(), spoken: true }];
+        {(['turtle', 'bunny', 'cheetah'] as GameMode[]).map((mode) => {
+          const config = getModeSettings(mode);
+          return (
+            <TouchableOpacity
+              key={mode}
+              activeOpacity={0.9}
+              style={{ marginBottom: 15 }}
+              onPress={() => {
+                gameState.current.gameMode = mode;
+                gameState.current.y = height / 2;
+                gameState.current.velocity = 0;
+                gameState.current.score = 0;
+                gameState.current.isGameOver = false;
+                gameState.current.isPlaying = false;
+                gameState.current.isAutopilot = false;
+                gameState.current.pipes = [{ x: width, gapY: height / 2, passed: false, animal: getRandomAnimal(), spoken: true }];
 
-            // LAUNCH THE FUN LOADING SCREEN!
-            setIsLoadingScreen(true);
-            setActiveScreen('game');
-            setLoadingAnimalIndex(0);
+                setIsLoadingScreen(true);
+                setActiveScreen('game');
+                setLoadingAnimalIndex(0);
 
-            // 3-second rapid loading drill!
-            let flashes = 0;
-            const loadingInterval = setInterval(() => {
-              flashes++;
-              const nextIdx = flashes % ANIMALS.length;
-              setLoadingAnimalIndex(nextIdx);
-              speakLoadingAnimal(ANIMALS[nextIdx].name);
+                let flashes = 0;
+                const loadingInterval = setInterval(() => {
+                  flashes++;
+                  const nextIdx = flashes % ANIMALS.length;
+                  setLoadingAnimalIndex(nextIdx);
+                  speakLoadingAnimal(ANIMALS[nextIdx].name);
 
-              if (flashes >= 8) {
-                clearInterval(loadingInterval);
-                setIsLoadingScreen(false);
-                // Actually start the game physics!
-                gameState.current.isPlaying = true;
-              }
-            }, 500); // changes animal every 500ms
-          }}
-        >
-          <Animated.View
-            style={[styles.playButton, { transform: [{ scale: pulseAnim }] }]}
-          >
-            <View style={styles.playButtonInner}>
-              <Text style={styles.playButtonText}>TAP TO FLY</Text>
-              <Text style={styles.playButtonSubInfo}>Fun & Easy • Perfect For Kids!</Text>
-            </View>
-          </Animated.View>
-        </TouchableOpacity>
+                  // Slowed down to 1200ms per animal, showing 4 animals total
+                  if (flashes >= 4) {
+                    clearInterval(loadingInterval);
+                    setIsLoadingScreen(false);
+                    gameState.current.isPlaying = true;
+                  }
+                }, 1500);
+              }}
+            >
+              <Animated.View
+                style={[
+                  styles.playButton,
+                  {
+                    backgroundColor: config.bgColor,
+                    borderColor: config.borderColor,
+                    shadowColor: config.borderColor,
+                    transform: [{ scale: pulseAnim }]
+                  }
+                ]}
+              >
+                <View style={[styles.playButtonInner, { backgroundColor: config.innerBgColor }]}>
+                  <Text style={styles.playButtonText}>{config.name}</Text>
+                  <Text style={styles.playButtonSubInfo}>{config.subtitle}</Text>
+                </View>
+              </Animated.View>
+            </TouchableOpacity>
+          );
+        })}
 
         {/* UI TEST CASE / BOT MODE TOGGLE */}
         <TouchableOpacity
           style={styles.botModeBtn}
           onPress={() => {
+            gameState.current.gameMode = 'turtle';
             gameState.current.y = height / 2;
             gameState.current.velocity = 0;
             gameState.current.score = 0;
@@ -629,12 +672,12 @@ export default function App() {
               setLoadingAnimalIndex(nextIdx);
               speakLoadingAnimal(ANIMALS[nextIdx].name);
 
-              if (flashes >= 6) {
+              if (flashes >= 4) {
                 clearInterval(loadingInterval);
                 setIsLoadingScreen(false);
                 gameState.current.isPlaying = true; // launch bot!
               }
-            }, 800);
+            }, 1500);
           }}
         >
           <Text style={styles.botModeText}>🤖 RUN UI TEST (AUTOPILOT)</Text>
@@ -745,7 +788,7 @@ export default function App() {
       const activeAnimal = ANIMALS[loadingAnimalIndex];
       return (
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingTitle}>GET READY!</Text>
+          <Text style={styles.loadingTitle}>LOADING ALL ANIMALS...</Text>
 
           {/* CHASE SCENE HD ANIMATION */}
           <View style={styles.chaseSceneContainer}>
@@ -760,7 +803,7 @@ export default function App() {
           <View style={styles.loadingAnimalBox}>
             <Image source={activeAnimal.img} style={styles.loadingAnimalTargetImg} resizeMode="contain" />
           </View>
-          <Text style={styles.loadingAnimalTargetName}>{activeAnimal.name}</Text>
+          <Text style={styles.loadingAnimalTargetName}>Loading {activeAnimal.name}...</Text>
 
           <TouchableOpacity style={[styles.muteButton, { marginTop: 40 }]} onPress={toggleMute}>
             <Text style={styles.muteButtonText}>{isMuted ? '🔇 Muted' : '🔊 Sound On'}</Text>
@@ -770,7 +813,8 @@ export default function App() {
     }
 
     // Dynamically Shrinking Gap logic for UI rendering to match physics
-    const gapSize = Math.max(130, 180 - (Math.floor(state.score / 10) * 5));
+    const config = getModeSettings(state.gameMode);
+    const gapSize = Math.max(150, config.gapBase - (Math.floor(state.score / 10) * 5));
 
     return (
       <TouchableOpacity
@@ -824,7 +868,7 @@ export default function App() {
             </View>
           )}
           {!state.isPlaying && !state.isGameOver && !state.isAutopilot && (
-            <Text style={styles.tapToRestart}>Tap Anywhere to Fly</Text>
+            <Text style={styles.tapToRestart}>Tap Anywhere to Start Fun! 🚀</Text>
           )}
           {state.isAutopilot && (
             <Text style={[styles.tapToRestart, styles.autopilotHighlight]}>Autopilot Engaged</Text>
@@ -880,11 +924,11 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#050510' },
+  container: { flex: 1, backgroundColor: '#87CEEB' }, // Sky blue kids theme!
   bgImage: { flex: 1, width: '100%', height: '100%' },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(5, 5, 20, 0.35)', // Less opacity for kids bright mode
+    backgroundColor: 'rgba(255, 255, 255, 0.25)', // Bright overly
   },
   safeArea: { flex: 1 },
 
@@ -901,122 +945,111 @@ const styles = StyleSheet.create({
   profileBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#FFF',
     paddingRight: 15,
     borderRadius: 25,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    ...boxShadow('rgba(0,0,0,0.1)', 10, 0, 4)
   },
   avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 10 },
   avatarImage: { borderRadius: 20 },
-  playerName: { color: '#FFF', fontSize: 13, fontWeight: '800' },
-  playerTitle: { color: '#0FF', fontSize: 11, fontWeight: '800' },
+  playerName: { color: '#333', fontSize: 14, fontWeight: '900' },
+  playerTitle: { color: '#FF9900', fontSize: 12, fontWeight: '900' },
 
   currencyContainer: { flexDirection: 'row', alignItems: 'center' },
   liveBadge: { marginRight: 5 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF0055', marginRight: 6 },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#00FF00', marginRight: 6 },
   currencyPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: '#FFF',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 15,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 2,
+    borderColor: '#FFD700',
+    ...boxShadow('rgba(0,0,0,0.1)', 5, 0, 3)
   },
-  gemPill: { borderColor: 'rgba(255, 215, 0, 0.5)', ...boxShadow('rgba(255, 215, 0, 0.2)', 10) },
-  currencyIcon: { fontSize: 14, marginRight: 6 },
-  currencyText: { color: '#FFF', fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
+  gemPill: { borderColor: '#FFD700' },
+  currencyIcon: { fontSize: 16, marginRight: 6 },
+  currencyText: { color: '#FF4500', fontSize: 14, fontWeight: '900', letterSpacing: 0.5 },
 
   // Menu
   menuContainer: { flex: 1, paddingHorizontal: 20, paddingTop: 40 },
 
-  // Glitch Effect Title
+  // Hero Text
   glitchContainer: { alignItems: 'center', marginVertical: -5 },
   glitchText: {
     fontSize: 56,
     fontWeight: '900',
-    fontStyle: 'italic',
     color: '#FFF',
-    ...textShadow('rgba(0, 255, 255, 0.8)', 15)
+    ...textShadow('#FF4500', 0, 3, 3) // chunky cartoon shadow
   },
-  glitchLayer1: {
-    position: 'absolute',
-    left: 2,
-    top: -2,
-    color: '#0FF',
-    opacity: 0.7,
-  },
-  glitchLayer2: {
-    position: 'absolute',
-    left: -2,
-    top: 2,
-    color: '#F0F',
-    opacity: 0.7,
-  },
-  titleTextTop: { fontSize: 64, letterSpacing: -2 },
+  glitchLayer1: { display: 'none' }, // Remove glitch for kids
+  glitchLayer2: { display: 'none' }, // Remove glitch for kids
+  titleTextTop: { fontSize: 64, letterSpacing: -1, color: '#FFD700', ...textShadow('#FF4500', 0, 4, 4) },
   titleTextBottom: {
     fontSize: 72,
-    color: '#0FF',
-    ...textShadow('#F0F', 0)
+    color: '#00FF00',
+    ...textShadow('#008000', 0, 4, 4)
   },
   seasonText: {
-    color: '#0CC',
+    color: '#FF1493',
     textAlign: 'center',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 2,
+    fontSize: 16,
+    fontWeight: '900',
+    letterSpacing: 1,
     marginTop: 15,
     marginBottom: 10,
-    ...textShadow('rgba(0, 255, 255, 0.5)', 5)
+    ...textShadow('#FFF', 0, 2, 2)
   },
 
   // Play Button
   mainActions: { alignItems: 'center', marginVertical: 30 },
   playButton: {
-    width: 240,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 0, 100, 0.8)',
+    width: 250,
+    height: 85,
+    borderRadius: 45,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FF0055',
-    ...boxShadow('#FF0055', 20),
-    elevation: 10,
+    borderWidth: 4,
+    elevation: 8,
   },
   playButtonInner: {
-    width: '95%',
-    height: '90%',
-    borderRadius: 36,
-    backgroundColor: 'rgba(255, 0, 100, 0.9)',
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: 'rgba(255,255,255,0.4)',
   },
   playButtonText: {
     color: '#FFF',
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '900',
     letterSpacing: 1,
+    ...textShadow('rgba(0,0,0,0.2)', 0, 2, 2)
   },
   playButtonSubInfo: {
     color: '#FFF',
-    fontSize: 10,
-    fontWeight: '700',
-    opacity: 0.8,
+    fontSize: 12,
+    fontWeight: '800',
+    opacity: 0.9,
   },
   botModeBtn: {
     marginTop: 20,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: 'rgba(0, 255, 255, 0.1)',
+    backgroundColor: '#FFF',
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#0FF',
+    borderWidth: 2,
+    borderColor: '#ccc',
+    ...boxShadow('rgba(0,0,0,0.1)', 4, 0, 2)
   },
   botModeText: {
-    color: '#0FF',
+    color: '#333',
     fontWeight: '800',
     fontSize: 12,
   },
@@ -1033,16 +1066,17 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 140,
     maxWidth: 200,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 20,
+    backgroundColor: '#FFF',
+    borderRadius: 25,
     padding: 15,
-    borderWidth: 1,
+    borderWidth: 3,
+    ...boxShadow('rgba(0,0,0,0.1)', 8, 0, 4),
     overflow: 'hidden',
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center' },
-  cardIcon: { fontSize: 24, marginRight: 10 },
-  cardTitle: { color: '#FFF', fontSize: 14, fontWeight: '700' },
-  cardSubtitle: { color: '#A0A0B0', fontSize: 11, fontWeight: '600' },
+  cardIcon: { fontSize: 28, marginRight: 10 },
+  cardTitle: { color: '#333', fontSize: 16, fontWeight: '900' },
+  cardSubtitle: { color: '#FF4500', fontSize: 12, fontWeight: '800' },
 
   // GAME UI Mechanics
   gameContainer: {
@@ -1223,25 +1257,26 @@ const styles = StyleSheet.create({
   backText: { color: '#FFF', fontSize: 16, fontWeight: '800' },
 
   // Leaderboard Modal
-  leaderboardHeaders: { flexDirection: 'row', paddingHorizontal: 15, paddingBottom: 10, borderBottomWidth: 1, borderColor: '#333', marginBottom: 10 },
-  lbHeadRank: { flex: 0.5, color: '#A0A0B0', fontSize: 12, fontWeight: '800' },
-  lbHeadName: { flex: 2, color: '#A0A0B0', fontSize: 12, fontWeight: '800' },
-  lbHeadScore: { flex: 1, color: '#A0A0B0', fontSize: 12, fontWeight: '800', textAlign: 'right' },
-  lbRow: { flexDirection: 'row', paddingHorizontal: 15, paddingVertical: 12, borderBottomWidth: 1, borderColor: 'rgba(255, 255, 255, 0.05)', alignItems: 'center' },
-  lbUserRow: { backgroundColor: 'rgba(0, 255, 255, 0.15)', borderColor: '#0FF', borderRadius: 10 },
-  lbRank: { flex: 0.5, color: '#0CC', fontWeight: '900', fontSize: 16 },
-  lbName: { flex: 2, color: '#FFF', fontWeight: '700', fontSize: 16 },
-  lbScore: { flex: 1, color: '#FF0055', fontWeight: '900', fontSize: 16, textAlign: 'right' },
-  lbUserText: { color: '#FFF', ...textShadow('#0FF', 10) },
+  leaderboardHeaders: { flexDirection: 'row', paddingHorizontal: 15, paddingBottom: 10, borderBottomWidth: 2, borderColor: '#EEE', marginBottom: 10 },
+  lbHeadRank: { flex: 0.5, color: '#888', fontSize: 14, fontWeight: '900' },
+  lbHeadName: { flex: 2, color: '#888', fontSize: 14, fontWeight: '900' },
+  lbHeadScore: { flex: 1, color: '#888', fontSize: 14, fontWeight: '900', textAlign: 'right' },
+  lbRow: { flexDirection: 'row', paddingHorizontal: 15, paddingVertical: 12, borderBottomWidth: 1, borderColor: '#EEE', alignItems: 'center' },
+  lbUserRow: { backgroundColor: '#FFF0F5', borderColor: '#FF1493', borderRadius: 15, borderWidth: 2 },
+  lbRank: { flex: 0.5, color: '#FF4500', fontWeight: '900', fontSize: 18 },
+  lbName: { flex: 2, color: '#333', fontWeight: '900', fontSize: 18 },
+  lbScore: { flex: 1, color: '#00D4FF', fontWeight: '900', fontSize: 18, textAlign: 'right' },
+  lbUserText: { color: '#FF1493' },
 
-  // Shop
+  // Shop / Modals
   shopContainer: {
     flex: 1,
-    backgroundColor: 'rgba(10, 10, 20, 0.95)',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderTopLeftRadius: 40,
+    borderTopRightRadius: 40,
     marginTop: 20,
     padding: 20,
+    ...boxShadow('rgba(0,0,0,0.1)', 20, 0, -10)
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1249,44 +1284,45 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  modalTitle: { fontSize: 24, fontWeight: '900', color: '#FFF' },
-  closeBtn: { fontSize: 24, color: '#FFF', fontWeight: 'bold' },
+  modalTitle: { fontSize: 28, fontWeight: '900', color: '#FF4500' },
+  closeBtn: { fontSize: 28, color: '#FF4500', fontWeight: '900' },
   shopSection: { marginBottom: 25 },
   sectionTitle: {
-    color: '#0CC',
-    fontSize: 14,
-    fontWeight: '800',
+    color: '#00D4FF',
+    fontSize: 18,
+    fontWeight: '900',
     marginBottom: 15,
     letterSpacing: 1,
   },
-  sponsorBody: { color: '#FFF', fontSize: 16, marginBottom: 20 },
+  sponsorBody: { color: '#666', fontSize: 16, fontWeight: '700', marginBottom: 20 },
   shopItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: '#FFF',
     padding: 15,
-    borderRadius: 15,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 20,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#EEE',
+    ...boxShadow('rgba(0,0,0,0.05)', 5, 0, 3)
   },
   premiumItem: {
-    borderColor: 'rgba(255, 215, 0, 0.5)',
-    backgroundColor: 'rgba(255, 215, 0, 0.05)',
+    borderColor: '#FFD700',
+    backgroundColor: '#FFFBE6',
   },
   sponsorTier3: {
-    borderColor: '#F0F',
-    backgroundColor: 'rgba(255, 0, 255, 0.05)'
+    borderColor: '#FF1493',
+    backgroundColor: '#FFF0F5'
   },
-  shopItemIcon: { fontSize: 30, marginRight: 15 },
+  shopItemIcon: { fontSize: 36, marginRight: 15 },
   shopItemDetails: { flex: 1 },
-  shopItemName: { color: '#FFF', fontSize: 16, fontWeight: '800' },
-  shopItemDesc: { color: '#A0A0B0', fontSize: 12, marginTop: 4 },
+  shopItemName: { color: '#333', fontSize: 18, fontWeight: '900' },
+  shopItemDesc: { color: '#888', fontSize: 14, fontWeight: '700', marginTop: 4 },
   shopItemPriceBtn: {
-    backgroundColor: '#FF0055',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
+    backgroundColor: '#00D4FF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 25,
   },
-  shopItemPrice: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
+  shopItemPrice: { color: '#FFF', fontWeight: '900', fontSize: 16 },
 });
