@@ -5,6 +5,8 @@ test.describe('FlyingBird End-to-End Game Simulator', () => {
     test('should load the home screen and mount successfully', async ({ page }) => {
         await page.goto('/');
 
+        await page.getByText('Flying Bird 🐦').click();
+
         // Validate the core neon title headers render (use first due to 3-layer glitch shadow)
         await expect(page.getByText('FLYING').first()).toBeVisible();
         await expect(page.getByText(/BIRD|OWL|BAT|BEE|PENGUIN|FOX|DUCK/).first()).toBeVisible();
@@ -19,6 +21,8 @@ test.describe('FlyingBird End-to-End Game Simulator', () => {
 
     test('should launch the global leaderboard modal', async ({ page }) => {
         await page.goto('/');
+
+        await page.getByText('Flying Bird 🐦').click();
 
         // Click the Global Ranks Dashboard Card
         const globalRanksCard = page.getByText('Global Ranks');
@@ -42,6 +46,8 @@ test.describe('FlyingBird End-to-End Game Simulator', () => {
         test.setTimeout(45000);
 
         await page.goto('/');
+
+        await page.getByText('Flying Bird 🐦').click();
 
         // Trigger UI Bot
         const botButton = page.getByText('RUN UI TEST (AUTOPILOT)', { exact: false });
